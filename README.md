@@ -28,6 +28,9 @@ DSH 插件: 127.0.0.1:11230，Bearer 见 state\social-dsh-token.txt
 
 ## 快速开始
 
+> 第一次装，别从这节开始，从 **[QUICKSTART.md](QUICKSTART.md)** 走——那是一页从零到收到第一条回复的完整清单。
+> 下面这三行是**已经装好之后**的日常操作。
+
 ```powershell
 # 0) 先装上游（任选其一：官方安装包 / 源码副本），记下安装根目录
 #    本工具用它定位 runtime.json 与 state\
