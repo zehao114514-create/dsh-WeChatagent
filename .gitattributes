@@ -1,0 +1,6 @@
+* text=auto
+*.patch -text
+*.ps1 text eol=crlf
+*.mjs text eol=lf
+*.py text eol=lf
+*.md text eol=lf

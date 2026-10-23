@@ -1,0 +1,21 @@
+# 上游源码副本 / 本地临时产物，不进仓库
+_upstream/
+_patchtest/
+*.bak-*
+*.diff.raw
+gen_patch.py
+
+# 任何形式的凭证都不要提交
+token*.txt
+*.token
+cred*.json
+cookie*.json
+.env
+.env.*
+
+# 平台噪声
+Thumbs.db
+.DS_Store
+node_modules/
+__pycache__/
+*.pyc

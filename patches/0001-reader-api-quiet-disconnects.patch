@@ -1,0 +1,37 @@
+--- a/scripts/reader-api.py
++++ b/scripts/reader-api.py
+@@ -839,16 +839,33 @@
+                 client.put_nowait(payload)
+             self.seen[payload['rawid']] = True
+         print('Reader explicitly retried incoming pat.', flush=True)
+         return True
+ 
+ 
++class ReaderHTTPServer(ThreadingHTTPServer):
++    """Client disconnects are normal traffic for this server, not crashes.
++
++    BaseHTTPRequestHandler lets ConnectionResetError escape into socketserver, which prints the
++    full traceback to stderr. Health polls, console polling and closed tabs all trigger it, so the
++    log fills with noise that buries real failures. Client-side disconnects are dropped here;
++    every other error still goes through the default reporting.
++    """
++    daemon_threads = True
++
++    def handle_error(self, request, client_address):
++        error = sys.exc_info()[1]
++        if isinstance(error, (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, TimeoutError)):
++            return
++        super().handle_error(request, client_address)
++
++
+ def create_reader_server(port, handler, server_factory=None):
+     """A bound client socket may deny access without appearing as a listener."""
+     try:
+-        return (server_factory or ThreadingHTTPServer)(('127.0.0.1', port), handler)
++        return (server_factory or ReaderHTTPServer)(('127.0.0.1', port), handler)
+     except OSError as error:
+         code = getattr(error, 'winerror', None) or error.errno
+         if code in (10013, 10048, errno.EACCES, errno.EADDRINUSE):
+             raise RuntimeError(f'READER_PORT_UNAVAILABLE port={port} code={code}') from None
+         raise
+ 
