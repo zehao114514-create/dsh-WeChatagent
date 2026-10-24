@@ -5,13 +5,16 @@
 | 补丁 | 上游基线 | 作用 | 状态 |
 |---|---|---|---|
 | `0001-reader-api-quiet-disconnects.patch` | v0.3.8 | 读取服务不再把「客户端提前断开」当异常刷 stderr | 已用 `git apply --check` 验证，干净 |
+| `0002-song-request-ack.patch` | v0.3.8 | 点歌命中后先回一句文字回执（并入库），不再静默 `return` | 已用 `git apply` 正反向各验一次，干净 |
 
 ## 用法
 
 ```powershell
 # 源码副本（有 .git）
 git apply --check patches\0001-reader-api-quiet-disconnects.patch
+git apply --check patches\0002-song-request-ack.patch
 git apply         patches\0001-reader-api-quiet-disconnects.patch
+git apply         patches\0002-song-request-ack.patch
 
 # 安装包形态（没有 .git）
 powershell -ExecutionPolicy Bypass -File tools\apply-patch.ps1 -Root "<安装根>"

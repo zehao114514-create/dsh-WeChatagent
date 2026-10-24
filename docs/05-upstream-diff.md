@@ -4,11 +4,12 @@
 
 本仓库的补丁都基于上游 **v0.3.8** 的文件内容生成。
 
-## 差异清单（当前只有一条）
+## 差异清单
 
 | 文件 | 改动 | 为什么 | 会不会冲突 |
 |---|---|---|---|
 | `scripts/reader-api.py` | 新增 `ReaderHTTPServer(ThreadingHTTPServer)`：`daemon_threads = True`，覆写 `handle_error()`，只吞 `ConnectionResetError` / `ConnectionAbortedError` / `BrokenPipeError` / `TimeoutError`；`create_reader_server()` 的默认工厂换成它 | 客户端提前断开是常态，裸 `ThreadingHTTPServer` 会把异常栈打进 stderr，日志失效 | 上游改到 `create_reader_server` 附近时会冲突，冲突了按下面的方法重做 |
+| `components/qq-bridge/src/core/social-engine.js` | 点歌分支（`SONG_REQUEST_RE` 命中处）在 `spawnAutoSing()` 之后补一段文字回执：`this.send(message, ack, { deliveryId })`，成功后把回执 `append(..., { outgoing: true })` 入库，日志打 `song_request_acked`；失败只记 `song_ack_failed`，不影响点歌本身 | 原来命中点歌就 `return`，**不回一个字也不入库**——语音条要几分钟才生成，聊天记录里看着像机器人死了（真实工单：「微信怎么不回了」） | 上游改点歌分支、或 `SocialEngine.send/append` 签名变化时会冲突 |
 
 **不包含**在补丁里、只在本地做过的改动（有意不进开源）：
 
@@ -29,15 +30,25 @@
 +        super().handle_error(request, client_address)
 ```
 
+```diff
+         spawnAutoSing(song, message.conversation_name ?? '', /完整|整首|全曲|全长|唱完|从头/.test(bare) ? 'full' : (/高潮|副歌/.test(bare) ? 'chorus' : ''));
++        // 点歌不再静默：语音条要几分钟才到，先回一句文字，否则在聊天记录里看着像"没回"。
++        const ack = String(this.songAck?.(song) ?? `《${song}》是吧。等着，换声加录音要几分钟，别催。`);
++        Promise.resolve().then(() => this.send(message, ack, { deliveryId: ackId })) /* …入库/记日志… */;
+         return;
+```
+
 ## 怎么应用
 
 ```powershell
 # 在 WeChatAgent 源码副本里
 git apply --check ..\..\patches\0001-reader-api-quiet-disconnects.patch   # 先检查
+git apply --check ..\..\patches\0002-song-request-ack.patch
 git apply           ..\..\patches\0001-reader-api-quiet-disconnects.patch
+git apply           ..\..\patches\0002-song-request-ack.patch
 ```
 
-对**安装包形态**（没有 .git）用 `tools\apply-patch.ps1`：它会先备份、再按锚点插入、最后 `py_compile` 自检。
+对**安装包形态**（没有 .git）用 `tools\apply-patch.ps1`：它会先备份、再按锚点插入、最后自检。
 
 ## 上游升级之后怎么办
 

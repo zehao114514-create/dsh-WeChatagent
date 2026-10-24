@@ -58,6 +58,8 @@ node tools\wca.mjs restart --root "..."
 | 症状 | 原因 | 本仓库怎么处理 |
 |---|---|---|
 | `state\logs\reader.stderr.log` 被 `ConnectionResetError: [WinError 10054]` 的完整 traceback 刷屏，真错误被埋 | 读取服务用裸 `ThreadingHTTPServer`，客户端提前断开时异常冒到 `socketserver.handle_error` | `patches/0001`：只吞掉四类"客户端已断开"异常，其它异常照旧上报 |
+| 叫机器人点歌，它一声不吭，聊天记录里像死机 | bridge 的点歌分支在拉起后台生成脚本后直接 `return`：不回文字、消息也不入库 | `patches/0002`：先回一句文字回执再入库（日志 `song_request_acked`） |
+| 语音/文件"发送成功"了但对方没收到 | 原生语音靠虚拟声卡 + 按住说话热键模拟，`exit=0` 只代表按键执行过 | `docs\04-troubleshooting.md` 的「exit=0 ≠ 送达」：发送后回读 `localType=34` 确认，别盲目重发 |
 | 改了模型不生效 | 插件的模型路由在 `packages\dsh-social-bridge-plugin\cordis.patch.yml`，`/health` 从这里读；只改 `config\wechatagent.json` 没用 | `docs\03-operations.md` 的「换模型」一节 + `wca.mjs config` |
 | 重启后插件代码没更新 | DSH 进程还跑着旧代码 | `docs\03-operations.md` 的「三件套重启顺序」 |
 | 分身上线后主微信报 `Another desktop WeChat is running` | 主微信与分身共存冲突 | `docs\04-troubleshooting.md` |
