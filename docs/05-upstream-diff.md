@@ -43,9 +43,9 @@
 ```powershell
 # 在 WeChatAgent 源码副本里
 git apply --check ..\..\patches\0001-reader-api-quiet-disconnects.patch   # 先检查
-git apply --check ..\..\patches\0002-song-request-ack.patch
+# 0002 已移出 patches/，见 docs\08-song-request-ack-reference.md
 git apply           ..\..\patches\0001-reader-api-quiet-disconnects.patch
-git apply           ..\..\patches\0002-song-request-ack.patch
+
 ```
 
 对**安装包形态**（没有 .git）用 `tools\apply-patch.ps1`：它会先备份、再按锚点插入、最后自检。

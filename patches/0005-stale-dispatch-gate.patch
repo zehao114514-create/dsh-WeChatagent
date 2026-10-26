@@ -1,0 +1,19 @@
+--- a/components/qq-bridge/src/core/social-engine.js
++++ b/components/qq-bridge/src/core/social-engine.js
+@@ -157,13 +157,16 @@
+       if(queued?.sending&&queued.parts?.length){completed=await this.#deliverReply(key,queued);return;}
+       if(message.kind==='group'&&this.modeFor(key)==='mention'&&!this.decisions.get(key)?.sending&&!this.buffer.unread(key,300).some(row=>row.direct_mention||isDirectMention(row,this.wakeWords)))return;
+       const wakeMode=this.modeFor(key);
+       const rows = [];
+       let imageCount = 0;
+       let promptSize = 0;
++      const staleCutoff = Date.now()/1000 - 900;
+       for (const row of this.buffer.unread(key,20)) {
++        const rowFresh = (Number(row.timestamp)||0) >= staleCutoff || row.direct_mention || isDirectMention(row,this.wakeWords);
++        if(!rowFresh) continue;
+         if (imageCount+(row.images?.length ?? 0)>4) break;
+         const size=chatLine(row,message.kind==='group').length+1;
+         if(rows.length && promptSize+size>12000)break;
+         rows.push(row); imageCount+=row.images?.length ?? 0;
+         promptSize+=size;
+       }

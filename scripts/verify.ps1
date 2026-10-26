@@ -1,4 +1,4 @@
-﻿# verify.ps1 —— 一次跑完本仓库的自检
+# verify.ps1 —— 一次跑完本仓库的自检
 #
 # 用法：
 #   powershell -ExecutionPolicy Bypass -File scripts\verify.ps1 -Root "<安装根或源码副本>"
@@ -50,7 +50,7 @@ if ($reader) {
 Step '4. 链路状态'
 if ($Root -and (Test-Path (Join-Path $Root 'data\desktop\runtime.json'))) {
     node (Join-Path $here 'tools\wca.mjs') diag --root $Root
-    if ($LASTEXITCODE -eq 0) { Ok '链路正常' } else { Write-Host '! 链路有需要处理的地方（见上）' -ForegroundColor Yellow }
+    if ($LASTEXITCODE -eq 0) { Ok '链路正常' } else { Bad '链路检查未通过（见上面的 diag 输出）' }
 } else {
     Write-Host '! 这不是安装包形态的根目录，跳过在线检查' -ForegroundColor Yellow
 }

@@ -73,7 +73,7 @@ py "<安装根>\data\workspace\scripts\reader-api.py" --port 5031
 
 1. **白名单**：这个群/这个人不在名单里，bridge 直接丢。
 2. **限流**：`social` 的每分钟/每十分钟额度用完了。看 `wca.mjs limits` 当前值。
-3. **某条分支自己 `return` 了**：最典型是点歌——命中后调后台脚本然后直接 `return`，一个字都不回（打 `0002` 补丁）。查 `bridge.stdout.log` 有没有该条目的日志、`social-messages.json` 里它有没有入库；**没入库 = 被吃掉了，不是模型不说话**。
+3. **某条分支自己 `return` 了**：最典型是点歌——命中后调后台脚本然后直接 `return`，一个字都不回（见 `docs/08-song-request-ack-reference.md`）。查 `bridge.stdout.log` 有没有该条目的日志、`social-messages.json` 里它有没有入库；**没入库 = 被吃掉了，不是模型不说话**。
 4. **插件**：`plugin ok=false`，或者模型一直输出 `SILENT`。
 5. **模型**：额度耗尽、超时。看 `bridge.stdout.log`。
 
