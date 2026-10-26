@@ -16,6 +16,19 @@
 - 人格提示词（`cordis.patch.yml` 里把默认人格换成自定义角色）——属于个人配置，仓库只给模板，见 `docs/06-extending.md`。
 - 路径、账号、模型名、令牌——全部本地化，仓库里不出现。
 
+## 补丁清单（按应用顺序）
+
+| 编号 | 目标文件 | 类型 | 一句话 |
+|---|---|---|---|
+| `0001-reader-api-quiet-disconnects` | `scripts/reader-api.py` | 修复 | 客户端断连不再把整条栈打进 stderr |
+| `0003-bing-cn-fallback` | `components/qq-bridge/src/core/web-search.js` | 增强 | `bingSearch()` 先试 `cn.bing.com`，失败再退 `www` |
+| `0004-search-fallback-and-language-filter` | `packages/dsh-social-bridge-plugin/model-search.mjs` | 增强 | 原生搜索不可用时报错回退 bing，并过滤语种 |
+| `0005-stale-dispatch-gate` | `components/qq-bridge/src/core/social-engine.js` | 修复 | 派发时跳过 15 分钟前的陈旧行，并标记已处理；扫描窗口放宽到 300 条，只收前 20 条新鲜的 |
+| `0006-strip-emo-tags` | `components/qq-bridge/src/core/message-buffer.js` | 修复 | 发送前剥掉 `[EMO xxx]`，别把立绘标签发进聊天 |
+| `0007-reader-limit-and-config` | `scripts/reader-api.py` | 修复 | `?limit=abc` 返回 400 而不是 503；启动缺配置时报出缺哪个键 |
+
+> `0005` 的「扫描窗口 300 / 只收 20 条新鲜」是 2026-10-26 实机报告中「队首被陈旧行堵死」的修法：先按数量取再过滤，会让旧行一直占位；正确做法是先放宽扫描再按新鲜度过滤，并把丢弃的行显式 `markProcessed`。
+
 ## 补丁长什么样
 
 ```diff

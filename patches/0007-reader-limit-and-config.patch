@@ -1,0 +1,33 @@
+--- a/scripts/reader-api.py
++++ b/scripts/reader-api.py
+@@ -876,7 +892,12 @@
+                 self.respond({'success': False, 'error': 'Unauthorized'}, 401)
+                 return
+             try:
+-                limit = min(500, max(1, int(query.get('limit', ['100'])[0])))
++                try:
++                    limit = min(500, max(1, int(query.get('limit', ['100'])[0])))
++                except (TypeError, ValueError):
++                    # 参数错就是客户端的问题，不该落进下面的 503 兜底里冒充「服务故障」。
++                    self.respond({'success': False, 'error': 'Invalid limit'}, 400)
++                    return
+                 if url.path == '/api/v1/push/messages':
+                     self.send_response(200)
+                     self.send_header('Content-Type', 'text/event-stream; charset=utf-8')
+@@ -1045,8 +1066,14 @@
+                 'selectedConversations': len(reader.selected_talkers())}))
+         else:
+             config = read_json(ROOT / 'config' / 'wechatagent.json')
+-            token = read_json(ROOT / 'state' / 'wechat-io-config.json')['reader_token']
+-            serve(reader, config['ports']['weflow'], token)
++            io_config = read_json(ROOT / 'state' / 'wechat-io-config.json')
++            missing = [name for name, value in (
++                ('config.ports.weflow', (config.get('ports') or {}).get('weflow')),
++                ('state.wechat-io-config.reader_token', io_config.get('reader_token')),
++            ) if not value]
++            if missing:
++                raise RuntimeError('MISSING_CONFIG: ' + ', '.join(missing))
++            serve(reader, config['ports']['weflow'], io_config['reader_token'])
+     except Exception as error:
+         print('Reader initialization failed: ' + str(error) if isinstance(error, RuntimeError) else 'Reader initialization failed: ' + type(error).__name__, file=sys.stderr)
+         sys.exit(1)

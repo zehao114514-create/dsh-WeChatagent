@@ -11,3 +11,9 @@
 ## 验证
 
 点歌两次：第一次应看到 `song_request_intercepted` + `VERDICT delivered`；第二次同一句话应只出现 `SKIP_BUSY 前一个还在跑 pid=...` 或被 `stale` 拦下，不会再起第二个进程。
+
+## 2026-10-26 实机修正
+
+- **受理回执**：点歌命中后回一条文字（「收到，去唱《X》，整首/副歌」），无可重放目标时回「曲库里还没有唱过的歌」——原来命中就 `return`，聊天里看着像机器人死了。
+- **统一判定**：点歌与「再来一遍」现在共用同一套 stale（>300s）/ dup（`message_id` 去重）判断，续唱分支不再绕过。
+- **日志**：`song_request_accepted` / `song_replay_accepted` / `song_replay_no_target` / `song_request_stale_ignored`。

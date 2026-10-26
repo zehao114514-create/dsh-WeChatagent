@@ -1,19 +1,17 @@
 --- a/components/qq-bridge/src/core/social-engine.js
 +++ b/components/qq-bridge/src/core/social-engine.js
-@@ -157,13 +157,16 @@
-       if(queued?.sending&&queued.parts?.length){completed=await this.#deliverReply(key,queued);return;}
-       if(message.kind==='group'&&this.modeFor(key)==='mention'&&!this.decisions.get(key)?.sending&&!this.buffer.unread(key,300).some(row=>row.direct_mention||isDirectMention(row,this.wakeWords)))return;
-       const wakeMode=this.modeFor(key);
+@@ -160,7 +249,13 @@
        const rows = [];
        let imageCount = 0;
        let promptSize = 0;
+-      for (const row of this.buffer.unread(key,20)) {
 +      const staleCutoff = Date.now()/1000 - 900;
-       for (const row of this.buffer.unread(key,20)) {
++      // 扫描上限放宽到 300 条，但只收集前 20 条「新鲜」的；陈旧行标记为已处理，避免长期占住队首把新的 @ 挡在外面。
++      let skippedStale = 0;
++      for (const row of this.buffer.unread(key,300)) {
 +        const rowFresh = (Number(row.timestamp)||0) >= staleCutoff || row.direct_mention || isDirectMention(row,this.wakeWords);
-+        if(!rowFresh) continue;
++        if(!rowFresh){ skippedStale += 1; this.buffer.markProcessed(key,row.id); continue; }
++        if (rows.length >= 20) break;
          if (imageCount+(row.images?.length ?? 0)>4) break;
          const size=chatLine(row,message.kind==='group').length+1;
          if(rows.length && promptSize+size>12000)break;
-         rows.push(row); imageCount+=row.images?.length ?? 0;
-         promptSize+=size;
-       }
