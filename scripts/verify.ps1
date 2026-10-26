@@ -1,4 +1,4 @@
-# verify.ps1 —— 一次跑完本仓库的自检
+﻿# verify.ps1 —— 一次跑完本仓库的自检
 #
 # 用法：
 #   powershell -ExecutionPolicy Bypass -File scripts\verify.ps1 -Root "<安装根或源码副本>"
@@ -19,6 +19,14 @@ $fail = 0
 function Step($name) { Write-Host "`n=== $name ===" -ForegroundColor Cyan }
 function Ok($m)   { Write-Host "✓ $m" -ForegroundColor Green }
 function Bad($m)  { Write-Host "✗ $m" -ForegroundColor Red; $script:fail++ }
+
+Step '0. 补丁基线（可选）'
+if ($env:WCA_UPSTREAM -and (Test-Path $env:WCA_UPSTREAM)) {
+    powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $here 'tools\check-patches.ps1') -Upstream $env:WCA_UPSTREAM
+    if ($LASTEXITCODE -eq 0) { Ok '补丁在官方源码上都能打' } else { Bad '有补丁打不上官方源码' }
+} else {
+    Write-Host '! 没设 WCA_UPSTREAM（官方源码目录），跳过补丁基线检查' -ForegroundColor Yellow
+}
 
 Step '1. CLI 语法'
 node --check (Join-Path $here 'tools\wca.mjs')

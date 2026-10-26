@@ -79,3 +79,18 @@ MIT。补丁与文档中的上游代码片段版权归上游作者（见 `LICENS
 ## 免责
 
 这是给你自己的机器、你自己的微信用的工具。自动回复涉及账号风控与隐私，请自行评估；仓库里所有示例都不含真实路径、手机号、token。
+
+## 发布前自检（改补丁的人必做）
+
+补丁的基线必须是**官方发布版**，不是自己改过的实例。仓库带了一个检查脚本：
+
+```powershell
+# 先把官方 tarball 解开（示例：v0.3.8）
+curl.exe -L -o src.tar.gz https://api.github.com/repos/sourcepro5/WeChatAgent/tarball/refs/tags/v0.3.8
+tar.exe -xzf src.tar.gz -C upstream
+
+# 在干净副本上逐个 git apply --check
+powershell -ExecutionPolicy Bypass -File tools\check-patches.ps1 -Upstream upstream\sourcepro5-WeChatAgent-<sha>
+```
+
+`verify.ps1` 也认这个：设了环境变量 `WCA_UPSTREAM` 就会先跑一遍补丁基线检查，任何一个补丁打不上都会计入失败。
