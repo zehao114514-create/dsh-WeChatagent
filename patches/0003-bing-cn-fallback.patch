@@ -1,0 +1,40 @@
+--- a/components/qq-bridge/src/core/web-search.js
++++ b/components/qq-bridge/src/core/web-search.js
+@@ -28,20 +28,29 @@
+     if(url&&title&&!items.some(item=>item.url===url))items.push({title,url,snippet});
+     if(items.length===10)break;
+   }
+   return items;
+ }
+ export async function bingSearch(query,{timeoutMs=8000,fetchImpl=fetch}={}){
+-  const url=new URL('https://www.bing.com/search');url.searchParams.set('format','rss');url.searchParams.set('q',query);
+-  const response=await fetchImpl(url,{redirect:'error',signal:AbortSignal.timeout(timeoutMs),headers:{Accept:'application/rss+xml, application/xml'}});
+-  if(!response.ok)throw Error('SEARCH_HTTP_FAILED');
+-  if(!response.body)throw Error('SEARCH_RESPONSE_INVALID');
+-  const reader=response.body.getReader(),chunks=[];let size=0;
+-  try{for(;;){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>131072)throw Error('SEARCH_RESPONSE_TOO_LARGE');chunks.push(value);}}
+-  finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
+-  return parseSearchRss(Buffer.concat(chunks).toString('utf8'));
++  // 国内网络下 www.bing.com 的 RSS 会直接 fetch failed，cn.bing.com 才通；
++  // 所以两个都试，谁先出结果用谁（redirect:'error' 保持不变，避免被跳到别的域）。
++  const hosts=['https://cn.bing.com/search','https://www.bing.com/search'];
++  let lastError;
++  for(const host of hosts){
++    const url=new URL(host);url.searchParams.set('format','rss');url.searchParams.set('q',query);
++    try{
++      const response=await fetchImpl(url,{redirect:'error',signal:AbortSignal.timeout(timeoutMs),headers:{Accept:'application/rss+xml, application/xml'}});
++      if(!response.ok)throw Error('SEARCH_HTTP_FAILED');
++      if(!response.body)throw Error('SEARCH_RESPONSE_INVALID');
++      const reader=response.body.getReader(),chunks=[];let size=0;
++      try{for(;;){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>131072)throw Error('SEARCH_RESPONSE_TOO_LARGE');chunks.push(value);}}
++      finally{await reader.cancel().catch(()=>{});reader.releaseLock();}
++      return parseSearchRss(Buffer.concat(chunks).toString('utf8'));
++    }catch(error){lastError=error;}
++  }
++  throw lastError??Error('SEARCH_HTTP_FAILED');
+ }
+ export function relevantSearchResults(query,items){
+   const text=String(query).toLowerCase().replace(/(?:是什么|什么意思|怎么样|如何|多少|今天|明天|最新|现在|一下|帮我)/g,' ');
+   const terms=[...(text.match(/[a-z0-9][a-z0-9_-]{1,}/g)??[])];
+   for(const phrase of text.match(/[\p{Script=Han}]{2,}/gu)??[])for(let i=0;i<phrase.length-1;i++)terms.push(phrase.slice(i,i+2));
+   if(!terms.length)return [];

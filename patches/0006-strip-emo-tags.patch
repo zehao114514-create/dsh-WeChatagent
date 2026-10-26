@@ -1,0 +1,19 @@
+--- a/components/qq-bridge/src/core/message-buffer.js
++++ b/components/qq-bridge/src/core/message-buffer.js
+@@ -1,14 +1,15 @@
+ import fs from 'node:fs';
+ import path from 'node:path';
+ import crypto from 'node:crypto';
+ import { buildConversationKey } from './conversation-key.js';
+ import { normalizeForwardedRecord, normalizeQuoteReply } from './wechat-events.js';
+ 
++const stripEmoTags = (value) => String(value ?? '').replace(/\[EMO[^\]]*\]/gi, '').replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+ export function replyDeliveryParts(result,deliveryId) {
+-  const parts=result.decision==='RESPOND'?(result.textParts??[result.text]).map(text=>({text})):[];
++  const parts=result.decision==='RESPOND'?(result.textParts??[result.text]).map((text)=>stripEmoTags(text)).filter((text)=>text.length>0).map((text)=>({text})):[];
+   if(result.stickerId)parts.push({stickerId:result.stickerId});
+   return parts.map((part,index)=>({...part,deliveryId:index===0?deliveryId:crypto.createHash('sha256').update(deliveryId+(part.stickerId?'\0sticker':'\0text-2')).digest('hex'),state:'queued'}));
+ }
+ function validReplyParts(item){
+   if(item.parts===undefined)return true;
+   const expected=replyDeliveryParts(item.result,item.deliveryId);
